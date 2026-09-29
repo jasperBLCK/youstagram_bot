@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% block title %}Рассылки{% endblock %}
+{% block head %}{% if running %}<meta http-equiv="refresh" content="10">{% endif %}{% endblock %}
+{% block content %}
+<div class="head"><div><h1>Рассылки</h1><p class="sub">Платные посты по базе бота. Продаются за охват. Не чаще 1–2 в неделю — иначе растут блокировки.</p></div>
+<a class="btn primary" href="/broadcasts/new">+ Новая рассылка</a></div>
+<div class="card">
+{% if broadcasts %}<table>
+<tr><th>Рассылка</th><th>Статус</th><th>Прогресс</th><th>Доставлено</th><th>Ошибки</th><th>Клики</th><th>Цена</th><th>Когда</th><th></th></tr>
+{% set badge = {'draft': ('', 'черновик'), 'scheduled': ('info', 'запланирована'), 'running': ('warn', 'идёт'), 'done': ('ok', 'готово'), 'cancelled': ('err', 'остановлена')} %}
+{% for b in broadcasts %}
+<tr>
+<td><a href="/broadcasts/{{ b.id }}"><b>{{ b.title }}</b></a><div class="small muted">{{ b.text[:60] }}{{ '…' if b.text|length > 60 }}</div></td>
+<td><span class="badge {{ badge[b.status][0] }}">{{ badge[b.status][1] }}</span></td>
+<td>{% if b.total %}<div class="bar"><i style="width:{{ [100, ((b.sent + b.failed) / b.total * 100)|round]|min }}%"></i></div><span class="small muted">{{ (b.sent + b.failed)|num }} / {{ b.total|num }}</span>{% else %}—{% endif %}</td>
+<td>{{ b.sent|num }}</td><td>{{ b.failed|num }}</td>
+<td>{{ b.clicks|num }}{% if b.sent %} <span class="small muted">({{ (b.clicks / b.sent * 100)|round(1) }}%)</span>{% endif %}</td>
+<td>{{ b.price|num }} ₽</td>
+<td class="small muted">{{ (b.started_at or b.scheduled_at)|dt }}</td>
+<td class="row">
+{% if b.status in ('scheduled', 'running') %}<form class="inline" method="post" action="/broadcasts/{{ b.id }}/cancel" data-confirm="Остановить рассылку?"><button class="btn sm danger">Стоп</button></form>{% endif %}
+<form class="inline" method="post" action="/broadcasts/{{ b.id }}/duplicate"><button class="btn sm ghost" title="Дублировать">⧉</button></form>
+{% if b.status != 'running' %}<form class="inline" method="post" action="/broadcasts/{{ b.id }}/delete" data-confirm="Удалить рассылку?"><button class="btn sm danger ghost">✕</button></form>{% endif %}
+</td></tr>{% endfor %}
+</table>{% else %}<div class="empty">Рассылок пока нет</div>{% endif %}
+</div>
+{% endblock %}

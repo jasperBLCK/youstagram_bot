@@ -1,0 +1,44 @@
+{% extends "base.html" %}{% block title %}Рассылка{% endblock %}
+{% block content %}
+{% set editable = b.status in ('draft', 'scheduled') %}
+<div class="head"><div><h1>{{ b.title if b.id else 'Новая рассылка' }}</h1><p class="sub">{% if audience is not none %}Получателей по фильтрам: <b>{{ audience|num }}</b>{% else %}Сохраните черновик, затем отправьте тест себе{% endif %}</p></div>
+<div class="row">{% if b.id %}<form class="inline" method="post" action="/broadcasts/{{ b.id }}/test"><button class="btn">📤 Тест себе</button></form>{% endif %}<a class="btn" href="/broadcasts">← Назад</a></div></div>
+<form method="post" enctype="multipart/form-data" action="{{ '/broadcasts/' ~ b.id if b.id else '/broadcasts/new' }}">
+<fieldset {{ '' if editable else 'disabled' }} style="border:0;padding:0;margin:0">
+<div class="split">
+<div class="card">
+  <div class="field"><label>Название (внутреннее)</label><input type="text" name="title" value="{{ b.title or '' }}"></div>
+  <div class="field"><label>Текст</label><textarea name="text" placeholder="HTML: <b>, <i>, <a href>…">{{ b.text or '' }}</textarea></div>
+  <div class="field"><label>Медиа (фото / видео / gif)</label><input type="file" name="media" accept="image/*,video/mp4,video/quicktime,.gif">
+  {% if b.media_path %}<div class="hint">{{ b.media_type }}: {{ b.media_path.split('/')[-1] }} · <label class="check" style="display:inline-flex"><input type="checkbox" name="remove_media"> удалить</label></div>{% endif %}</div>
+  <label>Кнопки-ссылки</label>
+  {% for i in range(3) %}{% set btn = b.buttons[i] if b.buttons and b.buttons|length > i else {} %}
+  <div class="fields" data-btn><div class="field"><input type="text" name="btn_text_{{ i }}" value="{{ btn.get('text', '') }}" placeholder="Текст кнопки {{ i + 1 }}"></div><div class="field"><input type="text" name="btn_url_{{ i }}" value="{{ btn.get('url', '') }}" placeholder="https://…"></div></div>
+  {% endfor %}
+</div>
+<div>
+<div class="card" style="margin-bottom:16px"><h3>Предпросмотр</h3><div id="preview" class="preview"></div></div>
+<div class="card">
+  <h3>Аудитория</h3>
+  <div class="fields">
+    <div class="field"><label>Язык</label><select name="target_lang">{% for v, l in [('all','Все'),('ru','Русский'),('en','English')] %}<option value="{{ v }}" {{ 'selected' if b.target_lang == v }}>{{ l }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Активны за N дней</label><input type="number" name="target_active_days" value="{{ b.target_active_days }}" min="0"><div class="hint">0 — вся живая база</div></div>
+    <div class="field"><label>Цена, ₽</label><input type="text" name="price" value="{{ b.price }}"></div>
+    <div class="field"><label class="check" style="margin-top:28px"><input type="checkbox" name="disable_preview" {{ 'checked' if b.disable_preview }}> Без превью ссылок</label></div>
+  </div>
+  <button class="btn primary">Сохранить</button>
+</div>
+</div>
+</div>
+</fieldset>
+</form>
+{% if b.id and editable %}
+<form class="card" style="margin-top:16px" method="post" action="/broadcasts/{{ b.id }}/start" data-confirm="Запустить рассылку? Отменить уже отправленные сообщения будет нельзя.">
+  <h3>Запуск</h3>
+  <div class="row"><div style="width:260px"><input type="datetime-local" name="scheduled_at" value="{{ b.scheduled_at|input_dt }}"></div>
+  <button class="btn primary">🚀 Запустить / запланировать</button><span class="hint">Пусто — отправить сейчас. ~25 сообщений/сек, учитываются лимиты Telegram.</span></div>
+</form>
+{% elif b.id %}
+<div class="card" style="margin-top:16px"><h3>Статус: {{ b.status }}</h3><p class="muted">Доставлено {{ b.sent|num }} из {{ b.total|num }}, ошибок {{ b.failed|num }}, кликов {{ b.clicks|num }}. Старт {{ b.started_at|dt }}, конец {{ b.finished_at|dt }}.</p></div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% block title %}Пользователи{% endblock %}
+{% block content %}
+<div class="head"><div><h1>Пользователи</h1><p class="sub">Всего найдено: {{ total|num }}</p></div>
+<form method="get" class="row"><input type="text" name="q" value="{{ q }}" placeholder="id, @username или имя" style="width:280px"><button class="btn">Найти</button></form></div>
+<div class="card">
+{% if users %}<table>
+<tr><th>Пользователь</th><th>Язык</th><th>Скачиваний</th><th>Статус</th><th>Регистрация</th><th>Был</th></tr>
+{% for u in users %}
+<tr>
+<td><a href="/users/{{ u.id }}"><b>{{ u.first_name or '—' }}</b></a><div class="small muted">{{ '@' ~ u.username if u.username else '' }} <span class="mono">{{ u.id }}</span></div></td>
+<td>{{ u.lang }}</td><td>{{ u.downloads_count|num }}</td>
+<td>{% if u.is_banned %}<span class="badge err">бан</span>{% elif u.is_blocked %}<span class="badge">заблокировал</span>{% elif u.premium_until and u.premium_until.replace(tzinfo=now.tzinfo) > now %}<span class="badge info">premium</span>{% else %}<span class="badge ok">активен</span>{% endif %}</td>
+<td class="small muted">{{ u.created_at|dt }}</td><td class="small muted">{{ u.last_seen_at|dt }}</td>
+</tr>{% endfor %}
+</table>
+{% if pages > 1 %}<div class="pager">{% for p in range(1, pages + 1) %}{% if p <= 3 or p > pages - 2 or (p - page)|abs <= 2 %}<a class="btn sm {{ 'primary' if p == page }}" href="?q={{ q|urlencode }}&page={{ p }}">{{ p }}</a>{% endif %}{% endfor %}</div>{% endif %}
+{% else %}<div class="empty">Никого не найдено</div>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Вход · Youstagram</title><link rel="stylesheet" href="/static/app.css"></head>
+<body><div class="login"><form class="card" method="post" action="/login">
+  <div class="logo" style="padding:0 0 18px"><i></i>Youstagram Admin</div>
+  {% if error %}<div class="flash err">{{ error }}</div>{% endif %}
+  <input type="hidden" name="next" value="{{ next }}">
+  <div class="field"><label>Логин</label><input type="text" name="username" autofocus autocomplete="username"></div>
+  <div class="field"><label>Пароль</label><input type="password" name="password" autocomplete="current-password"></div>
+  <button class="btn primary" style="width:100%;justify-content:center">Войти</button>
+</form></div></body></html>

@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% block title %}Настройки{% endblock %}
+{% block content %}
+<h1>Настройки</h1><p class="sub">Применяются без перезапуска бота</p>
+<form method="post" action="/settings">
+<div class="grid g2" style="grid-template-columns:1fr 1fr">
+{% for group, fields in groups %}
+<div class="card"><h3>{{ group }}</h3>
+{% for key, label, hint in fields %}
+<div class="field">
+{% if defaults[key] is sameas true or defaults[key] is sameas false %}
+<label class="check"><input type="checkbox" name="{{ key }}" {{ 'checked' if values[key] }}> <span>{{ label }}{% if hint %}<span class="hint" style="display:block">{{ hint }}</span>{% endif %}</span></label>
+{% else %}
+<label>{{ label }}</label>
+<input type="{{ 'number' if defaults[key] is number else 'text' }}" name="{{ key }}" value="{{ values[key] }}" class="{{ 'mono' if defaults[key] is not number }}">
+{% if hint %}<div class="hint">{{ hint }}</div>{% endif %}
+{% endif %}
+</div>
+{% endfor %}
+</div>
+{% endfor %}
+</div>
+<div style="margin-top:16px"><button class="btn primary">Сохранить настройки</button></div>
+</form>
+{% endblock %}

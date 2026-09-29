@@ -1,0 +1,34 @@
+{% extends "base.html" %}{% block title %}Объявление{% endblock %}
+{% block content %}
+<div class="head"><div><h1>{{ ad.title if ad.id else 'Новое объявление' }}</h1><p class="sub">{% if ad.id %}Показов {{ ad.impressions|num }} · кликов {{ ad.clicks|num }}{% else %}Показывается после выдачи видео, ротация по весу{% endif %}</p></div>
+<div class="row">{% if ad.id %}<form class="inline" method="post" action="/ads/{{ ad.id }}/test"><button class="btn">📤 Тест себе</button></form>{% endif %}<a class="btn" href="/ads">← Назад</a></div></div>
+<form method="post" enctype="multipart/form-data" action="{{ '/ads/' ~ ad.id if ad.id else '/ads/new' }}">
+<div class="split">
+<div class="card">
+  <div class="field"><label>Внутреннее название</label><input type="text" name="title" value="{{ ad.title or '' }}" placeholder="Рекламодатель / кампания"></div>
+  <div class="field"><label>Текст</label><textarea name="text" placeholder="Поддерживается HTML: <b>, <i>, <a href>…">{{ ad.text or '' }}</textarea></div>
+  <div class="fields" data-btn>
+    <div class="field"><label>Текст кнопки</label><input type="text" name="button_text" value="{{ ad.button_text or '' }}" placeholder="Перейти →"></div>
+    <div class="field"><label>Ссылка</label><input type="text" name="url" value="{{ ad.url or '' }}" placeholder="https://…"><div class="hint">Клики считаются через редирект</div></div>
+  </div>
+  <div class="field"><label>Картинка</label><input type="file" name="photo" accept="image/*">
+  {% if ad.photo_path %}<div class="hint">Загружена: {{ ad.photo_path.split('/')[-1] }} · <label class="check" style="display:inline-flex"><input type="checkbox" name="remove_photo"> удалить</label></div>{% endif %}</div>
+</div>
+<div>
+<div class="card" style="margin-bottom:16px"><h3>Предпросмотр</h3><div id="preview" class="preview"></div></div>
+<div class="card">
+  <div class="fields">
+    <div class="field"><label>Вес ротации</label><input type="number" name="weight" value="{{ ad.weight }}" min="1"><div class="hint">Доля показов пропорциональна весу</div></div>
+    <div class="field"><label>Язык</label><select name="lang">{% for v, l in [('all','Все'),('ru','Русский'),('en','English')] %}<option value="{{ v }}" {{ 'selected' if ad.lang == v }}>{{ l }}</option>{% endfor %}</select></div>
+    <div class="field"><label>Лимит показов</label><input type="number" name="impressions_limit" value="{{ ad.impressions_limit }}" min="0"><div class="hint">0 — без лимита</div></div>
+    <div class="field"><label>CPM, ₽</label><input type="text" name="cpm" value="{{ ad.cpm }}"><div class="hint">Для подсчёта дохода</div></div>
+    <div class="field"><label>Старт</label><input type="datetime-local" name="starts_at" value="{{ ad.starts_at|input_dt }}"></div>
+    <div class="field"><label>Конец</label><input type="datetime-local" name="ends_at" value="{{ ad.ends_at|input_dt }}"></div>
+  </div>
+  <div class="field"><label class="check"><input type="checkbox" name="is_active" {{ 'checked' if ad.is_active }}> Активно</label></div>
+  <button class="btn primary">Сохранить</button>
+</div>
+</div>
+</div>
+</form>
+{% endblock %}

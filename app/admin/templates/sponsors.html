@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% block title %}Спонсоры{% endblock %}
+{% block content %}
+<div class="head"><div><h1>Спонсоры (обязательная подписка)</h1><p class="sub">Каналы, на которые пользователь подписывается, чтобы скачать видео. Продаются за подписчика.</p></div>
+<a class="btn primary" href="/sponsors/new">+ Добавить спонсора</a></div>
+<div class="tip">Как подключить канал: добавьте бота в канал <b>администратором</b> (право «Приглашать пользователей»), затем нажмите «Проверить канал» в форме — бот создаст персональную ссылку, и все вступления по ней будут засчитаны спонсору.</div>
+<div class="card">
+{% if sponsors %}<table>
+<tr><th>Спонсор</th><th>Статус</th><th>Прогресс</th><th>Показов</th><th>Подписок</th><th>Отписок</th><th>CR</th><th>Сумма</th><th></th></tr>
+{% for s in sponsors %}
+<tr>
+<td><a href="/sponsors/{{ s.id }}"><b>{{ s.title }}</b></a><div class="small muted">{{ 'канал' if s.kind == 'channel' else 'ссылка' }}{{ ' · заявки' if s.join_request }} · приоритет {{ s.priority }} · {{ s.lang }}</div></td>
+<td>{% if s.is_active %}<span class="badge ok">активен</span>{% elif s.target_subs and s.joined >= s.target_subs %}<span class="badge info">выполнен</span>{% else %}<span class="badge">выключен</span>{% endif %}</td>
+<td>{% if s.target_subs %}<div class="bar"><i style="width:{{ [100, (s.joined / s.target_subs * 100)|round]|min }}%"></i></div><span class="small muted">{{ s.joined|num }} / {{ s.target_subs|num }}</span>{% else %}<span class="muted small">без лимита</span>{% endif %}</td>
+<td>{{ s.shows|num }}</td><td>{{ s.joined|num }}</td><td>{{ s.left|num }}{% if s.joined %} <span class="small muted">({{ (s.left / s.joined * 100)|round|int }}%)</span>{% endif %}</td>
+<td>{{ ((s.joined / s.shows * 100)|round|int ~ '%') if s.shows else '—' }}</td>
+<td>{{ (s.joined * (s.price_per_sub|float))|num }} ₽</td>
+<td class="row"><form class="inline" method="post" action="/sponsors/{{ s.id }}/toggle"><button class="btn sm">{{ 'Пауза' if s.is_active else 'Включить' }}</button></form>
+<form class="inline" method="post" action="/sponsors/{{ s.id }}/delete" data-confirm="Удалить спонсора и его статистику?"><button class="btn sm danger ghost">✕</button></form></td>
+</tr>{% endfor %}
+</table>{% else %}<div class="empty">Спонсоров пока нет</div>{% endif %}
+</div>
+{% endblock %}

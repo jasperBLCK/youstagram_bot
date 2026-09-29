@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% block title %}Пользователь{% endblock %}
+{% block content %}
+<div class="head"><div><h1>{{ u.first_name or 'Пользователь' }} {% if u.username %}<span class="muted">@{{ u.username }}</span>{% endif %}</h1><p class="sub mono">{{ u.id }}</p></div><a class="btn" href="/users">← Назад</a></div>
+<div class="grid g4">
+  <div class="card kpi"><div class="l">Скачиваний</div><div class="v">{{ u.downloads_count|num }}</div></div>
+  <div class="card kpi"><div class="l">Подписок на спонсоров</div><div class="v">{{ subs|num }}</div></div>
+  <div class="card kpi"><div class="l">Пригласил</div><div class="v">{{ invited|num }}</div></div>
+  <div class="card kpi"><div class="l">Premium до</div><div class="v" style="font-size:18px">{{ u.premium_until|dt }}</div></div>
+</div>
+<div class="grid g2" style="margin-top:16px">
+<div class="card"><h3>Последние скачивания</h3>
+{% if downloads %}<table><tr><th>Когда</th><th>Платформа</th><th>Формат</th><th>Статус</th><th>Ссылка</th></tr>
+{% for d in downloads %}<tr><td class="small">{{ d.created_at|dt }}</td><td>{{ d.platform }}</td><td>{{ d.fmt }}</td><td><span class="badge {{ 'ok' if d.status in ('done','cached') else 'err' if d.status == 'failed' else '' }}">{{ d.status }}</span></td><td class="small"><a href="{{ d.url }}" target="_blank" rel="noopener">{{ d.url[:40] }}…</a></td></tr>{% endfor %}
+</table>{% else %}<div class="empty">Нет скачиваний</div>{% endif %}
+</div>
+<div>
+<div class="card" style="margin-bottom:16px"><h3>Профиль</h3>
+<p class="small">Язык: {{ u.lang }}<br>Источник: {{ source.name if source else 'органика' }}<br>Пригласил: {{ u.referrer_id or '—' }}<br>Регистрация: {{ u.created_at|dt }}<br>Был: {{ u.last_seen_at|dt }}<br>Последняя ОП: {{ u.last_gate_passed_at|dt }}<br>
+Статус: {{ 'заблокировал бота' if u.is_blocked else 'активен' }}{{ ' · забанен' if u.is_banned }}</p>
+{% if payments %}<h3>Платежи</h3>{% for p in payments %}<div class="small">{{ p.created_at|dt }} — {{ p.stars }} ⭐ за {{ p.days }} дн.</div>{% endfor %}{% endif %}
+</div>
+<div class="card"><h3>Действия</h3>
+<form method="post" action="/users/{{ u.id }}/premium" class="row" style="margin-bottom:12px"><input type="number" name="days" placeholder="дней" style="width:100px"><button class="btn">Выдать Premium</button><span class="hint">−1 — снять</span></form>
+<form method="post" action="/users/{{ u.id }}/ban" data-confirm="Точно?"><button class="btn {{ '' if u.is_banned else 'danger' }}">{{ 'Разбанить' if u.is_banned else 'Забанить' }}</button></form>
+</div>
+</div>
+</div>
+{% endblock %}

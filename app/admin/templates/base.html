@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Админка{% endblock %} · Youstagram</title>
+<link rel="stylesheet" href="/static/app.css">
+{% block head %}{% endblock %}
+</head>
+<body>
+<div class="layout">
+  <aside class="side">
+    <div class="logo"><i></i>Youstagram</div>
+    <nav class="nav">
+      {% set items = [("/", "📊", "Дашборд"), ("/sponsors", "📢", "Спонсоры (ОП)"), ("/ads", "💬", "Реклама после видео"), ("/broadcasts", "📨", "Рассылки"), ("/sources", "🎯", "Источники трафика"), ("/users", "👥", "Пользователи"), ("/settings", "⚙️", "Настройки")] %}
+      {% for href, icon, label in items %}
+      <a href="{{ href }}" class="{{ 'on' if (href == '/' and path == '/') or (href != '/' and path.startswith(href)) }}">{{ icon }} {{ label }}</a>
+      {% endfor %}
+    </nav>
+    <div class="foot"><a href="/logout">Выйти →</a></div>
+  </aside>
+  <main>
+    {% if flash %}<div class="flash {{ flash.kind }}">{{ flash.message }}</div>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+<script src="/static/app.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

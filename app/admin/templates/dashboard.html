@@ -1,0 +1,46 @@
+{% extends "base.html" %}{% block title %}Дашборд{% endblock %}
+{% block head %}<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>{% endblock %}
+{% block content %}
+<h1>Дашборд</h1><p class="sub">Ключевые метрики бота и монетизации</p>
+<div class="grid g4">
+  <div class="card kpi accent"><div class="l">Пользователей</div><div class="v">{{ kpi.total|num }}</div><div class="h">живых {{ kpi.alive|num }} · блок {{ kpi.blocked_pct }}%</div></div>
+  <div class="card kpi"><div class="l">MAU (30 дней)</div><div class="v">{{ kpi.mau|num }}</div><div class="h">DAU сегодня: {{ kpi.dau|num }}</div></div>
+  <div class="card kpi"><div class="l">Новых сегодня</div><div class="v">{{ kpi.new_today|num }}</div><div class="h">скачиваний сегодня: {{ kpi.downloads_today|num }}</div></div>
+  <div class="card kpi"><div class="l">Конверсия ОП (7 дн.)</div><div class="v">{{ kpi.gate_conv ~ '%' if kpi.gate_conv is not none else '—' }}</div><div class="h">прошли / увидели ОП</div></div>
+</div>
+<div class="grid g4" style="margin-top:16px">
+  <div class="card kpi"><div class="l">Доход ОП · 30 дн.</div><div class="v">{{ kpi.op_revenue|num }} ₽</div><div class="h">по цене за подписчика</div></div>
+  <div class="card kpi"><div class="l">Доход рассылок · 30 дн.</div><div class="v">{{ kpi.bc_revenue|num }} ₽</div><div class="h">по указанной цене</div></div>
+  <div class="card kpi"><div class="l">Telegram Stars · 30 дн.</div><div class="v">{{ kpi.stars30|num }} ⭐</div><div class="h">продажи Premium</div></div>
+  <div class="card kpi"><div class="l">Premium активен</div><div class="v">{{ kpi.premium|num }}</div><div class="h">платные + рефералы</div></div>
+</div>
+<div class="grid g2" style="margin-top:16px">
+  <div class="card"><h3>Аудитория и скачивания · 30 дней</h3><canvas id="c1" height="110"></canvas></div>
+  <div class="card"><h3>Платформы · 30 дней</h3><canvas id="c2" height="190"></canvas></div>
+</div>
+<div class="grid g2" style="margin-top:16px">
+  <div class="card"><h3>ОП: показы и прохождения</h3><canvas id="c3" height="90"></canvas></div>
+  <div class="card"><h3>Топ источников</h3>
+    {% if top_sources %}<table><tr><th>Источник</th><th>Юзеров</th><th>₽/юзер</th></tr>
+    {% for name, code, cost, users in top_sources %}<tr><td>{{ name }}<div class="small muted mono">src_{{ code }}</div></td><td>{{ users|num }}</td><td>{{ ((cost|float) / users)|round(2) if users and cost else '—' }}</td></tr>{% endfor %}
+    </table>{% else %}<div class="empty">Нет источников</div>{% endif %}
+  </div>
+</div>
+<div class="card" style="margin-top:16px"><div class="head"><h3>Активные спонсоры</h3><a class="btn sm" href="/sponsors/new">+ Спонсор</a></div>
+  {% if sponsors %}<table><tr><th>Спонсор</th><th>Прогресс</th><th>Показов</th><th>Подписок</th><th>Отписок</th><th>CR</th></tr>
+  {% for s in sponsors %}<tr><td><a href="/sponsors/{{ s.id }}">{{ s.title }}</a></td>
+  <td>{% if s.target_subs %}<div class="bar"><i style="width:{{ [100, (s.joined / s.target_subs * 100)|round]|min }}%"></i></div><span class="small muted">{{ s.joined }}/{{ s.target_subs }}</span>{% else %}<span class="muted">без лимита</span>{% endif %}</td>
+  <td>{{ s.shows|num }}</td><td>{{ s.joined|num }}</td><td>{{ s.left|num }}</td><td>{{ ((s.joined / s.shows * 100)|round|int ~ '%') if s.shows else '—' }}</td></tr>{% endfor %}
+  </table>{% else %}<div class="empty">Нет активных спонсоров — ОП не показывается, бот пока не зарабатывает. <a class="btn sm primary" href="/sponsors/new">Добавить первого</a></div>{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const C = {{ chart|tojson }}, P = {{ platforms|tojson }};
+Chart.defaults.color = "#8b93a7"; Chart.defaults.borderColor = "#232838"; Chart.defaults.font.family = "Inter,system-ui,sans-serif";
+const line = (label, data, color, fill) => ({label, data, borderColor: color, backgroundColor: color + "22", tension: .35, fill, pointRadius: 0, borderWidth: 2});
+new Chart(c1, {type: "line", data: {labels: C.labels, datasets: [line("Скачивания", C.downloads, "#7c5cff", true), line("DAU", C.dau, "#22d3ee", false), line("Новые", C.new_users, "#22c55e", false)]}, options: {interaction: {mode: "index", intersect: false}, plugins: {legend: {position: "bottom"}}}});
+new Chart(c2, {type: "doughnut", data: {labels: ["YouTube", "Instagram", "TikTok"], datasets: [{data: [P.youtube, P.instagram, P.tiktok], backgroundColor: ["#ef4444", "#d946ef", "#22d3ee"], borderWidth: 0}]}, options: {plugins: {legend: {position: "bottom"}}, cutout: "68%"}});
+new Chart(c3, {type: "bar", data: {labels: C.labels, datasets: [{label: "Показали ОП", data: C.gate_shown, backgroundColor: "#7c5cff66"}, {label: "Прошли ОП", data: C.gate_passed, backgroundColor: "#22c55e"}]}, options: {plugins: {legend: {position: "bottom"}}, scales: {x: {stacked: false}}}});
+</script>
+{% endblock %}

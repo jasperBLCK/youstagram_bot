@@ -1,0 +1,55 @@
+[project]
+name = "youstagram-bot"
+version = "0.1.0"
+description = "Telegram-бот для скачивания видео (YouTube / Instagram / TikTok) с монетизацией через обязательную подписку и веб-админкой"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "aiogram>=3.31,<4",
+    "aiosqlite>=0.22,<1",
+    "alembic>=1.20,<2",
+    "arq>=0.25,<1",
+    "asyncpg>=0.31,<1",
+    "fastapi>=0.141,<1",
+    "itsdangerous>=2.2,<3",
+    "jinja2>=3.1,<4",
+    "pydantic-settings>=2.15,<3",
+    "python-multipart>=0.0.20,<1",
+    "redis>=7.4,<8",
+    "sqlalchemy[asyncio]>=2.0.54,<2.1",
+    "uvicorn[standard]>=0.53,<1",
+    "yt-dlp>=2026.8.19",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28,<1",
+    "mypy>=2.3,<3",
+    "pytest>=9.1,<10",
+    "pytest-asyncio>=1.4,<2",
+    "ruff>=0.16,<1",
+]
+
+[tool.uv]
+exclude-newer = "7 days"
+package = false
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "ASYNC", "SIM", "RUF"]
+ignore = ["RUF001", "RUF002", "RUF003", "B008"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_unused_ignores = true
+exclude = ["migrations/"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

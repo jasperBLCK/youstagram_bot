@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% block title %}Источники{% endblock %}
+{% block content %}
+<h1>Источники трафика</h1><p class="sub">Закупаете рекламу бота — создайте источник и дайте каналу его ссылку. Увидите, сколько людей пришло, сколько живут и окупилось ли.</p>
+<form class="card" method="post" action="/sources" style="margin-bottom:16px">
+  <div class="row"><div style="flex:1"><label>Название</label><input type="text" name="name" placeholder="Канал «Мемы», пост 12.10"></div>
+  <div style="width:220px"><label>Код</label><input type="text" name="code" placeholder="memes_1210"></div>
+  <div style="width:160px"><label>Затраты, ₽</label><input type="text" name="cost" placeholder="0"></div>
+  <div style="align-self:flex-end"><button class="btn primary">Создать</button></div></div>
+</form>
+<div class="card">
+{% if rows %}<table>
+<tr><th>Источник</th><th>Ссылка</th><th>Пришло</th><th>Активны 7д</th><th>Блок</th><th>Скачиваний</th><th>Stars</th><th>Затраты</th><th>Цена юзера</th><th></th></tr>
+{% for s, users, active, downloads, blocked in rows %}
+<tr>
+<td><b>{{ s.name }}</b><div class="small muted">{{ s.created_at|dt }}</div></td>
+<td class="mono small">t.me/{{ bot_username }}?start=src_{{ s.code }}</td>
+<td>{{ users|num }}</td>
+<td>{{ active|num }}{% if users %} <span class="small muted">({{ (active / users * 100)|round|int }}%)</span>{% endif %}</td>
+<td>{{ ((blocked / users * 100)|round|int ~ '%') if users else '—' }}</td>
+<td>{{ downloads|num }}</td>
+<td>{{ (stars.get(s.id) or 0)|num }}</td>
+<td><form class="row" method="post" action="/sources/{{ s.id }}/cost"><input type="text" name="cost" value="{{ s.cost }}" style="width:90px"><button class="btn sm ghost">✓</button></form></td>
+<td>{{ ((s.cost|float) / users)|round(2) ~ ' ₽' if users and s.cost else '—' }}</td>
+<td><form class="inline" method="post" action="/sources/{{ s.id }}/delete" data-confirm="Удалить источник? Пользователи останутся."><button class="btn sm danger ghost">✕</button></form></td>
+</tr>{% endfor %}
+</table>{% else %}<div class="empty">Источников пока нет</div>{% endif %}
+</div>
+{% endblock %}

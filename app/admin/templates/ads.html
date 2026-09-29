@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% block title %}Реклама{% endblock %}
+{% block content %}
+<div class="head"><div><h1>Реклама после видео</h1><p class="sub">Сообщение приходит сразу после скачанного файла — пик внимания, максимальный CTR. Продаётся за показы (CPM) или фикс.</p></div>
+<a class="btn primary" href="/ads/new">+ Новое объявление</a></div>
+<div class="card">
+{% if ads %}<table>
+<tr><th>Объявление</th><th>Статус</th><th>Вес</th><th>Показы</th><th>Клики</th><th>CTR</th><th>Доход</th><th>Период</th><th></th></tr>
+{% for a in ads %}
+<tr>
+<td><a href="/ads/{{ a.id }}"><b>{{ a.title }}</b></a><div class="small muted">{{ a.text[:70] }}{{ '…' if a.text|length > 70 }}</div></td>
+<td>{% if a.is_active %}<span class="badge ok">активно</span>{% else %}<span class="badge">выключено</span>{% endif %}</td>
+<td>{{ a.weight }}</td>
+<td>{{ a.impressions|num }}{% if a.impressions_limit %}<div class="bar"><i style="width:{{ [100, (a.impressions / a.impressions_limit * 100)|round]|min }}%"></i></div><span class="small muted">из {{ a.impressions_limit|num }}</span>{% endif %}</td>
+<td>{{ a.clicks|num }}</td>
+<td>{{ ((a.clicks / a.impressions * 100)|round(2) ~ '%') if a.impressions else '—' }}</td>
+<td>{{ (a.impressions / 1000 * (a.cpm|float))|num }} ₽</td>
+<td class="small muted">{{ a.starts_at|dt }}<br>{{ a.ends_at|dt }}</td>
+<td class="row"><form class="inline" method="post" action="/ads/{{ a.id }}/toggle"><button class="btn sm">{{ 'Пауза' if a.is_active else 'Включить' }}</button></form>
+<form class="inline" method="post" action="/ads/{{ a.id }}/delete" data-confirm="Удалить объявление?"><button class="btn sm danger ghost">✕</button></form></td>
+</tr>{% endfor %}
+</table>{% else %}<div class="empty">Объявлений нет. Пока их нет, после видео показывается предложение пригласить друга.</div>{% endif %}
+</div>
+{% endblock %}

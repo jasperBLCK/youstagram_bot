@@ -1,0 +1,38 @@
+{% extends "base.html" %}{% block title %}Спонсор{% endblock %}
+{% block content %}
+<div class="head"><div><h1>{{ s.title if s.id else 'Новый спонсор' }}</h1><p class="sub">{{ 'Показов ' ~ s.shows ~ ' · подписок ' ~ s.joined ~ ' · отписок ' ~ s.left if s.id else 'Заказ на подписчиков в обязательную подписку' }}</p></div>
+<a class="btn" href="/sponsors">← Назад</a></div>
+<form method="post" action="{{ '/sponsors/' ~ s.id if s.id else '/sponsors/new' }}">
+<div class="split">
+<div class="card">
+  <div class="fields">
+    <div class="field"><label>Тип</label><select name="kind"><option value="channel" {{ 'selected' if s.kind == 'channel' }}>Канал / группа (подписка проверяется)</option><option value="link" {{ 'selected' if s.kind == 'link' }}>Ссылка: бот / сайт (засчитывается переход)</option></select></div>
+    <div class="field"><label>Название на кнопке</label><input type="text" name="title" value="{{ s.title or '' }}" placeholder="Например: Лучшие мемы 🔥"></div>
+  </div>
+  <div class="field"><label>Найти канал</label><div class="row"><input type="text" id="chat_lookup" placeholder="@channel, https://t.me/channel или -100…" style="flex:1"><button type="button" class="btn" onclick="checkChannel()">Проверить канал</button></div><div id="chat_result" class="hint"></div></div>
+  <div class="fields">
+    <div class="field"><label>chat_id</label><input type="text" name="chat_id" value="{{ s.chat_id or '' }}" placeholder="-100…"><div class="hint">Заполняется автоматически при проверке</div></div>
+    <div class="field"><label>Ссылка для кнопки</label><input type="text" name="url" value="{{ s.url or '' }}" placeholder="https://t.me/+invite"></div>
+  </div>
+  <div class="field"><label class="check"><input type="checkbox" name="join_request" {{ 'checked' if s.join_request }}> Закрытый канал: засчитывать заявку на вступление<span class="hint">&nbsp;— заявка = подписка, конверсия заметно выше. Ссылка создаётся «с заявкой».</span></label></div>
+  <div class="field"><label>Заметка (контакт рекламодателя, условия)</label><input type="text" name="note" value="{{ s.note or '' }}"></div>
+</div>
+<div class="card">
+  <h3>Заказ</h3>
+  <div class="fields">
+    <div class="field"><label>Цель, подписчиков</label><input type="number" name="target_subs" value="{{ s.target_subs }}" min="0"><div class="hint">0 — без лимита. По достижении выключится сам</div></div>
+    <div class="field"><label>Цена за подписчика, ₽</label><input type="text" name="price_per_sub" value="{{ s.price_per_sub }}"></div>
+    <div class="field"><label>Удержание, дней</label><input type="number" name="hold_days" value="{{ s.hold_days }}" min="0"><div class="hint">Отписки раньше срока считаются</div></div>
+    <div class="field"><label>Приоритет</label><input type="number" name="priority" value="{{ s.priority }}"><div class="hint">Выше — показывается первым</div></div>
+    <div class="field"><label>Язык аудитории</label><select name="lang">{% for v, l in [('all','Все'),('ru','Русский'),('en','English')] %}<option value="{{ v }}" {{ 'selected' if s.lang == v }}>{{ l }}</option>{% endfor %}</select></div>
+    <div class="field"><label class="check" style="margin-top:28px"><input type="checkbox" name="only_new_users" {{ 'checked' if s.only_new_users }}> Только новым</label></div>
+    <div class="field"><label>Старт</label><input type="datetime-local" name="starts_at" value="{{ s.starts_at|input_dt }}"></div>
+    <div class="field"><label>Конец</label><input type="datetime-local" name="ends_at" value="{{ s.ends_at|input_dt }}"></div>
+  </div>
+  <div class="field"><label class="check"><input type="checkbox" name="is_active" {{ 'checked' if s.is_active }}> Активен</label></div>
+  {% if subs is not none %}<div class="small muted">Через бота: подписались {{ subs.get('joined', 0) }}, заявок {{ subs.get('requested', 0) }}, отписались {{ subs.get('left', 0) }}</div>{% endif %}
+  <div style="margin-top:14px"><button class="btn primary">Сохранить</button></div>
+</div>
+</div>
+</form>
+{% endblock %}

@@ -1,0 +1,58 @@
+x-app: &app
+  build: .
+  env_file: .env
+  environment:
+    DATABASE_URL: postgresql+asyncpg://bot:bot@postgres:5432/bot
+    REDIS_URL: redis://redis:6379/0
+    UPLOADS_DIR: /data/uploads
+  volumes:
+    - uploads:/data/uploads
+  restart: unless-stopped
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis: { condition: service_healthy }
+    migrate: { condition: service_completed_successfully }
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment: { POSTGRES_USER: bot, POSTGRES_PASSWORD: bot, POSTGRES_DB: bot }
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U bot"], interval: 3s, retries: 20 }
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: [redisdata:/data]
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 3s, retries: 20 }
+    restart: unless-stopped
+
+  migrate:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://bot:bot@postgres:5432/bot
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  bot:
+    <<: *app
+    command: ["python", "-m", "app.bot"]
+
+  worker:
+    <<: *app
+    command: ["python", "-m", "app.worker"]
+    deploy:
+      replicas: 1
+
+  admin:
+    <<: *app
+    command: ["uvicorn", "app.admin.main:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers", "--forwarded-allow-ips", "*"]
+    ports: ["8000:8000"]
+
+volumes:
+  pgdata:
+  redisdata:
+  uploads:
