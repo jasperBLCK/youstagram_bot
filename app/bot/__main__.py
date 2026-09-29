@@ -38,7 +38,7 @@ COMMANDS = {
 
 def build_dispatcher(redis: Redis) -> Dispatcher:
     dp = Dispatcher()
-    dp["state"] = State(redis)
+    dp["store"] = State(redis)
     dp.update.outer_middleware(DbMiddleware(session_factory()))
     dp.include_routers(channels.router, premium.router, referral.router, common.router, download.router)
     return dp

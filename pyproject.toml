@@ -22,6 +22,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "fakeredis>=2.26,<3",
     "httpx>=0.28,<1",
     "mypy>=2.3,<3",
     "pytest>=9.1,<10",

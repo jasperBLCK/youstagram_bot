@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import Source, User
@@ -63,7 +64,14 @@ async def get_or_create(
         created_at=now,
         last_seen_at=now,
     )
-    session.add(user)
+    try:
+        async with session.begin_nested():
+            session.add(user)
+    except IntegrityError:
+        existing = await session.get(User, tg_id, populate_existing=True)
+        if existing is None:
+            raise
+        return existing, False
     await stats.incr(session, "new_users")
     await stats.incr(session, "dau")
     return user, True

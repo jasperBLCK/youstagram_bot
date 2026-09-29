@@ -20,9 +20,9 @@ router = Router(name="download")
 
 
 def _ctx(
-    bot: Bot, session: AsyncSession, state: State, arq: ArqRedis, cfg: dict[str, Any], is_admin: bool
+    bot: Bot, session: AsyncSession, store: State, arq: ArqRedis, cfg: dict[str, Any], is_admin: bool
 ) -> flow.Ctx:
-    return flow.Ctx(bot=bot, session=session, state=state, arq=arq, cfg=cfg, is_admin=is_admin)
+    return flow.Ctx(bot=bot, session=session, state=store, arq=arq, cfg=cfg, is_admin=is_admin)
 
 
 @router.message(F.chat.type == ChatType.PRIVATE, F.text | F.caption)
@@ -30,7 +30,7 @@ async def on_private_text(
     message: Message,
     bot: Bot,
     session: AsyncSession,
-    state: State,
+    store: State,
     arq: ArqRedis,
     cfg: dict[str, Any],
     user: User,
@@ -44,15 +44,15 @@ async def on_private_text(
     if link is None:
         await message.answer(t("no_link", lang))
         return
-    if await state.hit_rate_limit(user.id, int(cfg["rate_limit_per_min"])) and not is_admin:
+    if await store.hit_rate_limit(user.id, int(cfg["rate_limit_per_min"])) and not is_admin:
         await message.answer(t("rate_limited", lang))
         return
-    token = await state.save_request(user.id, link)
+    token = await store.save_request(user.id, link)
     if link.platform == Platform.YOUTUBE:
         await message.answer(t("choose_format", lang), reply_markup=keyboards.formats(token, lang))
         return
     await flow.request(
-        _ctx(bot, session, state, arq, cfg, is_admin), user, message.chat.id, token, link, Fmt.VIDEO
+        _ctx(bot, session, store, arq, cfg, is_admin), user, message.chat.id, token, link, Fmt.VIDEO
     )
 
 
@@ -61,21 +61,21 @@ async def on_format(
     call: CallbackQuery,
     bot: Bot,
     session: AsyncSession,
-    state: State,
+    store: State,
     arq: ArqRedis,
     cfg: dict[str, Any],
     user: User,
     is_admin: bool,
 ) -> None:
     _, token, fmt = (call.data or "::").split(":", 2)
-    link = await state.load_request(token, user.id)
+    link = await store.load_request(token, user.id)
     if link is None or fmt not in (Fmt.VIDEO, Fmt.AUDIO):
         await call.answer(t("expired", user.lang), show_alert=True)
         return
     await call.answer()
     if isinstance(call.message, Message):
         await call.message.delete()
-    await flow.request(_ctx(bot, session, state, arq, cfg, is_admin), user, user.id, token, link, fmt)
+    await flow.request(_ctx(bot, session, store, arq, cfg, is_admin), user, user.id, token, link, fmt)
 
 
 @router.callback_query(F.data == "gate:check")
@@ -83,18 +83,18 @@ async def on_gate_check(
     call: CallbackQuery,
     bot: Bot,
     session: AsyncSession,
-    state: State,
+    store: State,
     arq: ArqRedis,
     cfg: dict[str, Any],
     user: User,
     is_admin: bool,
 ) -> None:
-    pending = await state.get_pending(user.id)
-    link = await state.load_request(pending.token, user.id) if pending else None
+    pending = await store.get_pending(user.id)
+    link = await store.load_request(pending.token, user.id) if pending else None
     if pending is None or link is None:
         await call.answer(t("expired", user.lang), show_alert=True)
         return
-    ctx = _ctx(bot, session, state, arq, cfg, is_admin)
+    ctx = _ctx(bot, session, store, arq, cfg, is_admin)
     passed, done, sponsors = await flow.check_gate(ctx, user, pending)
     if not passed:
         names = ", ".join(s.title for s in sponsors if s.id not in done)
@@ -104,7 +104,7 @@ async def on_gate_check(
             with contextlib.suppress(TelegramBadRequest):
                 await call.message.edit_reply_markup(reply_markup=kb)
         return
-    await state.clear_pending(user.id)
+    await store.clear_pending(user.id)
     await call.answer(t("gate_ok", user.lang))
     if isinstance(call.message, Message):
         await call.message.delete()
@@ -116,7 +116,7 @@ async def on_group_text(
     message: Message,
     bot: Bot,
     session: AsyncSession,
-    state: State,
+    store: State,
     arq: ArqRedis,
     cfg: dict[str, Any],
 ) -> None:
@@ -126,10 +126,10 @@ async def on_group_text(
     if link is None:
         return
     uid = message.from_user.id
-    if await state.hit_rate_limit(uid, int(cfg["rate_limit_per_min"])):
+    if await store.hit_rate_limit(uid, int(cfg["rate_limit_per_min"])):
         return
     lang = detect_lang(message.from_user.language_code)
-    ctx = _ctx(bot, session, state, arq, cfg, False)
+    ctx = _ctx(bot, session, store, arq, cfg, False)
     await flow.deliver(
         ctx,
         uid,
